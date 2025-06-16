@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Your Appointments</h2>
+
+  <!-- Back to Dashboard Button -->
+  <a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+  <table class="table table-bordered">
+    <thead class="thead-dark">
+      <tr>
+        <th>Doctor ID</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Reason</th>
+        {% if current_user.role != 'patient' %}
+        <th>Patient ID</th>
+        <th>Actions</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for appt in appointments %}
+      <tr>
+        <td>{{ appt.doctor_id }}</td>
+        <td>{{ appt.date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ appt.date.strftime('%H:%M') }}</td>
+        <td>{{ appt.reason }}</td>
+        {% if current_user.role != 'patient' %}
+        <td>{{ appt.patient_id }}</td>
+        <td>
+          <!-- Edit Button -->
+          <a href="{{ url_for('appointment.edit_appointment', appointment_id=appt.id) }}" class="btn btn-sm btn-warning">Edit</a>
+
+          <!-- Delete Button (POST method) -->
+          <a href="{{ url_for('appointment.delete_appointment', appointment_id=appt.id) }}" class="btn btn-sm btn-danger"
+            onclick="return confirm('Are you sure you want to delete this appointment?');">Delete</a>
+
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

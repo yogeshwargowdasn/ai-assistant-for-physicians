@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Upload Medical Report</h2>
+<a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<form method="POST" enctype="multipart/form-data">
+  <div class="mb-3">
+    <label for="file" class="form-label">Select File (PDF, PNG, DOC, DOCX)</label>
+    <input type="file" class="form-control" id="file" name="file" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Upload Report</button>
+  <a href="{{ url_for('report.view_reports') }}" class="btn btn-secondary ms-2">Back to Reports</a>
+</form>
+{% endblock %}

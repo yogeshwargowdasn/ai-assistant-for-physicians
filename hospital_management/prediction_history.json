@@ -1,0 +1,162 @@
+[
+    {
+        "symptoms": [
+            "vomiting"
+        ],
+        "disease": "E. coli Infection",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever"
+        ],
+        "disease": "Tonsillitis",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever"
+        ],
+        "disease": "Tonsillitis",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sore throat"
+        ],
+        "disease": "Common Cold",
+        "tests": [
+            "Physical Exam",
+            "CBC"
+        ]
+    },
+    {
+        "symptoms": [
+            "sore throat",
+            "sweating"
+        ],
+        "disease": "Common Cold",
+        "tests": [
+            "Physical Exam",
+            "CBC"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "chills"
+        ],
+        "disease": "Malaria",
+        "tests": [
+            "Blood Smear",
+            "Rapid Diagnostic Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "chest pain"
+        ],
+        "disease": "Heart Attack",
+        "tests": [
+            "ECG",
+            "Troponin Test",
+            "Chest X-ray"
+        ]
+    },
+    {
+        "symptoms": [
+            "body pain",
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever"
+        ],
+        "disease": "Tonsillitis",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    }
+]

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Disease & Lab Test Prediction{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2>Disease & Lab Test Prediction</h2>
+  <a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+  <form id="predictForm" onsubmit="return false;">
+    <label for="symptoms">Select Symptoms:</label><br>
+    <div id="symptomCheckboxes" class="mb-3 row">
+      {% for symptom in symptoms %}
+        <div class="form-check col-md-3">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            name="symptoms"
+            value="{{ symptom }}"
+            id="symptom_{{ loop.index }}"
+            {% if saved_symptoms and symptom in saved_symptoms %}checked{% endif %}>
+          <label class="form-check-label" for="symptom_{{ loop.index }}">{{ symptom|capitalize }}</label>
+        </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-success" onclick="predictDisease()">Predict</button>
+  </form>
+
+  <div class="mt-4" id="result" style="display: none;">
+    <h4>Predicted Disease:</h4>
+    <p id="predictedDisease" class="text-primary fw-bold"></p>
+
+    <h4>Recommended Lab Tests:</h4>
+    <ul id="recommendedTests" class="list-group"></ul>
+  </div>
+</div>
+
+<script>
+async function predictDisease() {
+  const checkboxes = document.querySelectorAll('input[name="symptoms"]:checked');
+  if (checkboxes.length === 0) {
+    alert("Please select at least one symptom.");
+    return;
+  }
+
+  const selectedSymptoms = Array.from(checkboxes).map(cb => cb.value);
+
+  try {
+    const res = await fetch("/ai/predict-disease", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symptoms: selectedSymptoms })
+    });
+
+    if (!res.ok) throw new Error("Network response was not ok");
+
+    const data = await res.json();
+
+    document.getElementById("result").style.display = "block";
+    document.getElementById("predictedDisease").innerText = data.disease || "No disease predicted.";
+
+    const testsList = document.getElementById("recommendedTests");
+    testsList.innerHTML = "";
+    if (data.tests && data.tests.length > 0) {
+      data.tests.forEach(test => {
+        const li = document.createElement("li");
+        li.className = "list-group-item";
+        li.innerText = test;
+        testsList.appendChild(li);
+      });
+    } else {
+      const li = document.createElement("li");
+      li.className = "list-group-item text-danger";
+      li.innerText = "No tests recommended.";
+      testsList.appendChild(li);
+    }
+  } catch (err) {
+    alert("Error predicting disease: " + err.message);
+  }
+}
+</script>
+{% endblock %}

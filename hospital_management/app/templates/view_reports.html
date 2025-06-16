@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Your Medical Reports</h2>
+<a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+{% if reports %}
+  <table class="table table-bordered bg-white shadow-sm">
+    <thead class="table-light">
+      <tr>
+        <th>#</th>
+        <th>Filename</th>
+        <th>Uploaded On</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for report in reports %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ report.filename }}</td>
+        <td>{{ report.upload_date.strftime('%Y-%m-%d') if report.upload_date else 'N/A' }}</td>
+        <td>
+          <a href="{{ url_for('report.download_report', filename=report.filename) }}" class="btn btn-sm btn-success">Download</a>
+          <a href="{{ url_for('report.delete_report', report_id=report.id) }}" class="btn btn-sm btn-danger"
+             onclick="return confirm('Are you sure you want to delete this report?');">Delete</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No reports uploaded yet.</p>
+{% endif %}
+
+<a href="{{ url_for('report.upload_report') }}" class="btn btn-primary">Upload New Report</a>
+{% endblock %}

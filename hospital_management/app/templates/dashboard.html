@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Welcome, {{ user.username }} ({{ user.role|capitalize }})</h3>
+<p>Use the menu to navigate.</p>
+
+<div class="row">
+  <div class="col-md-4">
+    <div class="card text-bg-info mb-3">
+      <div class="card-body">
+        <h5 class="card-title">Your Role</h5>
+        <p class="card-text">{{ user.role.capitalize() }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

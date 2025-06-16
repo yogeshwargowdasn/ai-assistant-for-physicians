@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Edit Appointment</h2>
+<a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+
+<form method="POST">
+  <div class="mb-3">
+    <label for="reason" class="form-label">Reason</label>
+    <input type="text" class="form-control" name="reason" id="reason" value="{{ appointment.reason }}" required>
+  </div>
+  <button type="submit" class="btn btn-primary">Update</button>
+  <a href="{{ url_for('appointment.view_appointments') }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
+

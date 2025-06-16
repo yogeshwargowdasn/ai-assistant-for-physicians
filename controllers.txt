@@ -1,0 +1,314 @@
+1. hospital_management/app/controllers/main_controller.py:
+from flask import Blueprint, flash, redirect, render_template, request, url_for, jsonify
+import json
+from flask_login import current_user, login_required
+from app import db
+from models.prediction_result import PredictionResult
+
+main_bp = Blueprint('main', __name__)
+
+# ------------------------------
+# 🔹 Route: AI Tools Overview
+# ------------------------------
+@main_bp.route('/ai-tools')
+def ai_tools_page():
+    return render_template('ai_suggestions.html')
+
+# ------------------------------
+# 🔹 Route: Symptom Suggest Page
+# ------------------------------
+@main_bp.route('/symptom-suggest')
+def symptom_suggest_page():
+    return render_template('symptom_suggest.html')
+
+# ------------------------------
+# 🔹 Route: Speech-to-Text Page
+# ------------------------------
+@main_bp.route('/speech-to-text')
+def speech_to_text_page():
+    return render_template('speech_to_text.html')
+
+# ------------------------------
+# 🔹 Save Symptoms (Optional)
+# ------------------------------
+@main_bp.route('/save-symptoms', methods=['POST'])
+def save_symptoms():
+    manual_symptoms = request.form.get('manual_symptoms', '')
+    selected_symptoms = request.form.getlist('selected_symptoms')
+    flash(f"Saved: {manual_symptoms} + {', '.join(selected_symptoms)}", "success")
+    return redirect(url_for('main.symptom_suggest_page'))
+
+# ------------------------------
+# 🔹 Legacy Submit Route
+# ------------------------------
+@main_bp.route('/submit-symptoms', methods=['POST'])
+def submit_symptoms():
+    selected = request.form.get('finalSymptoms', '')
+    symptoms = selected.split(',') if selected else []
+    flash("Symptoms submitted: " + ", ".join(symptoms), "success")
+    return redirect(url_for('main.symptom_suggest_page'))
+
+# ------------------------------
+# 🔹 Predict Form Page
+# ------------------------------
+@main_bp.route('/predict-disease', methods=['GET'])
+def predict_disease_page():
+    symptoms = [
+        "fever", "cough", "headache", "nausea", "vomiting", "fatigue", "chest pain",
+        "rash", "sore throat", "body pain", "diarrhea", "shortness of breath", "dizziness"
+    ]
+    return render_template("symptom_predict.html", symptoms=symptoms)
+
+# -----------------------------------------------------
+# 🧠 Unified POST Endpoint: Predict Disease from Symptoms
+# -----------------------------------------------------
+@main_bp.route('/ai/predict-disease', methods=['POST'])
+@login_required
+def predict_disease_api():
+    # Accept JSON or form data
+    if request.is_json:
+        data = request.get_json()
+        symptoms = data.get('symptoms', [])
+    else:
+        raw = request.form.get('symptoms', '')
+        try:
+            symptoms = json.loads(raw) if raw else []
+        except Exception:
+            return jsonify({"error": "Invalid symptom format"}), 400
+
+    if not symptoms:
+        return jsonify({"error": "No symptoms provided"}), 400
+
+    print("Symptoms received for prediction:", symptoms)
+
+    # 🧠 Basic Rule-Based Disease Prediction
+    disease_map = {
+        "fever": ["Flu", "Dengue", "Malaria"],
+        "cough": ["Common Cold", "Bronchitis", "COVID-19"],
+        "headache": ["Migraine", "Tension headache", "Flu"],
+        "rash": ["Allergy", "Chickenpox", "Measles"],
+        "nausea": ["Food Poisoning", "Gastritis"],
+        "fatigue": ["Anemia", "Hypothyroidism"],
+        "chest pain": ["Heart Attack", "Angina"],
+        "diarrhea": ["Food Poisoning", "Cholera"]
+    }
+
+    predicted_diseases = set()
+    for symptom in symptoms:
+        predicted_diseases.update(disease_map.get(symptom.lower(), []))
+
+    disease = sorted(predicted_diseases)[0] if predicted_diseases else None
+
+    # 🧪 Lab Test Suggestions
+    lab_tests_map = {
+        "Flu": ["CBC", "Influenza Test"],
+        "Dengue": ["Dengue NS1 Antigen", "CBC"],
+        "Malaria": ["Peripheral Blood Smear", "Rapid Diagnostic Test"],
+        "Common Cold": [],
+        "Bronchitis": ["Chest X-Ray"],
+        "COVID-19": ["RT-PCR", "Antigen Test"],
+        "Migraine": [],
+        "Tension headache": [],
+        "Allergy": ["Allergy Test"],
+        "Chickenpox": ["Varicella-Zoster Virus Test"],
+        "Measles": ["Measles Antibody Test"],
+        "Food Poisoning": ["Stool Culture"],
+        "Gastritis": ["Endoscopy"],
+        "Anemia": ["CBC", "Iron Studies"],
+        "Hypothyroidism": ["TSH Test"],
+        "Heart Attack": ["ECG", "Troponin Test"],
+        "Angina": ["ECG", "Stress Test"],
+        "Cholera": ["Stool Test"]
+    }
+
+    tests = lab_tests_map.get(disease, []) if disease else []
+
+    # ✅ Save to DB if user is logged in
+    new_result = PredictionResult(
+        user_id=current_user.id,
+        symptoms=",".join(symptoms),
+        disease=disease,
+        tests=",".join(tests)
+    )
+    db.session.add(new_result)
+    db.session.commit()
+
+    # 🔁 Return JSON if API, otherwise render template
+    if request.is_json:
+        return jsonify({"disease": disease, "tests": tests})
+    
+    return render_template("symptom_suggest.html", disease=disease, tests=tests)
+
+
+2. hospital_management/app/controllers/ai_controller.py:
+import os
+import requests
+import json
+import wave
+
+from flask import Blueprint, request, jsonify
+from werkzeug.utils import secure_filename
+from vosk import Model, KaldiRecognizer
+
+ai_bp = Blueprint('ai', __name__)
+
+# --------------------------
+# ✅ Load Vosk model safely
+# --------------------------
+base_dir = os.path.dirname(os.path.abspath(__file__))
+vosk_model_path = os.path.join(base_dir, "..", "..", "vosk-model-small-en-us-0.15")
+
+if not os.path.exists(vosk_model_path):
+    print(f"[ERROR] Vosk model not found at: {vosk_model_path}")
+    model = None
+else:
+    model = Model(vosk_model_path)
+    print(f"[INFO] Vosk model loaded from: {vosk_model_path}")
+
+# --------------------------
+# Symptom Keywords
+# --------------------------
+SYMPTOM_KEYWORDS = [
+    "fever", "cough", "headache", "vomiting", "rash", "fatigue", "pain",
+    "nausea", "cold", "diarrhea", "dizziness", "breathlessness", "body pain"
+]
+
+ALL_SYMPTOMS = SYMPTOM_KEYWORDS
+
+# --------------------------
+# OpenRouter GPT-3.5 API Key
+# --------------------------
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # Set in .env or OS
+
+# --------------------------
+# 1️⃣ Speech-to-Text Endpoint
+# --------------------------
+@ai_bp.route('/ai/speech-to-text', methods=['POST'])
+def speech_to_text():
+    if model is None:
+        return jsonify({"error": "Vosk speech model is not loaded on server"}), 500
+
+    if 'audio' not in request.files:
+        return jsonify({"error": "No audio file provided"}), 400
+
+    audio_file = request.files['audio']
+    filename = secure_filename(audio_file.filename)
+    filepath = os.path.join("/tmp", filename)
+    audio_file.save(filepath)
+
+    wf = wave.open(filepath, "rb")
+    if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getcomptype() != "NONE":
+        return jsonify({"error": "Audio must be mono WAV format (PCM)"}), 400
+
+    rec = KaldiRecognizer(model, wf.getframerate())
+    rec.SetWords(True)
+
+    results = []
+    while True:
+        data = wf.readframes(4000)
+        if len(data) == 0:
+            break
+        if rec.AcceptWaveform(data):
+            result = json.loads(rec.Result())
+            results.append(result.get("text", ""))
+    final_result = json.loads(rec.FinalResult())
+    results.append(final_result.get("text", ""))
+
+    transcript = " ".join(results).strip().lower()
+    detected_symptoms = [s for s in SYMPTOM_KEYWORDS if s in transcript]
+
+    return jsonify({
+        "transcript": transcript,
+        "detected_symptoms": detected_symptoms
+    })
+
+# --------------------------
+# 2️⃣ Symptom Suggestion via GPT-3.5 (OpenRouter)
+# --------------------------
+def suggest_symptoms_from_llm(input_text):
+    if not OPENROUTER_API_KEY:
+        return ["Missing OpenRouter API key"]
+
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost",
+        "X-Title": "Hospital-AI-Assistant"
+    }
+
+    prompt = f"""You are a smart healthcare assistant.
+Patient said: '{input_text}'
+Give 3 likely medical symptoms (comma-separated) that are related or might also appear.
+Only list symptoms, no extra text."""
+
+    payload = {
+        "model": "openai/gpt-3.5-turbo",
+        "messages": [
+            {"role": "user", "content": prompt}
+        ]
+    }
+
+    response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+
+    if response.status_code != 200:
+        return [f"OpenRouter Error: {response.status_code}"]
+
+    try:
+        raw = response.json()
+        content = raw["choices"][0]["message"]["content"]
+        suggestions = [s.strip().lower() for s in content.split(",")]
+        # Filter by known symptoms
+        filtered = list(set([s for s in suggestions if s in ALL_SYMPTOMS]))
+        return filtered if filtered else ["No valid symptom match"]
+    except Exception as e:
+        return [f"Error parsing LLM output: {str(e)}"]
+
+# --------------------------
+# 3️⃣ Symptom Suggestion Endpoint
+# --------------------------
+@ai_bp.route('/ai/symptom-suggest', methods=['POST'])
+def symptom_suggest():
+    data = request.get_json()
+    input_text = data.get("input_text", "")
+
+    if not input_text:
+        return jsonify({"error": "input_text is required"}), 400
+
+    related = suggest_symptoms_from_llm(input_text)
+    return jsonify({
+        "input_text": input_text,
+        "related_symptoms": related
+    })
+
+# --------------------------
+# 4️⃣ Disease Prediction (Rule-Based)
+# --------------------------
+@ai_bp.route('/ai/predict-disease', methods=['POST'])
+def predict_disease():
+    data = request.get_json()
+    symptoms = data.get("symptoms", [])
+
+    disease = "Unknown"
+    recommended_tests = []
+
+    # Simple rules (Replace with ML later)
+    if {"fever", "cough", "fatigue"}.issubset(symptoms):
+        disease = "Influenza"
+        recommended_tests = ["CBC", "Influenza Test", "Chest X-Ray"]
+
+    elif {"headache", "vomiting", "nausea"}.issubset(symptoms):
+        disease = "Migraine"
+        recommended_tests = ["CT Scan", "MRI", "Neurological Exam"]
+
+    elif {"rash", "fever", "body pain"}.issubset(symptoms):
+        disease = "Dengue"
+        recommended_tests = ["Dengue NS1 Antigen", "Platelet Count", "CBC"]
+
+    elif {"shortness of breath", "chest pain"}.issubset(symptoms):
+        disease = "Heart Attack"
+        recommended_tests = ["ECG", "Troponin Test", "Chest X-ray"]
+
+    return jsonify({
+        "disease": disease,
+        "tests": recommended_tests
+    })

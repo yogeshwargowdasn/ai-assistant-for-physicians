@@ -1,6 +1,36 @@
-.env
+# Python bytecode and cache
 __pycache__/
 *.pyc
+
+# Environment and instance folders
+.env
+.env*/
+venv/
+ENV/
+env/
 instance/
+
+# Model and data files
 *.json
-.joblib
+*.joblib
+
+# Uploaded files
+uploads/
+uploads/
+
+# Text and other unnecessary files
+main files.txt
+model.txt
+templetes.txt
+gpt.txt
+folder.txt
+
+# others
+
+*.zip
+*.db
+*.json
+/uploads/
+/__pycache__/
+/*.pdf
+*.docx

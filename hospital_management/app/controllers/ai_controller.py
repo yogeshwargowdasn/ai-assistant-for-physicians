@@ -11,6 +11,7 @@ from vosk import Model, KaldiRecognizer
 
 ai_bp = Blueprint('ai', __name__)
 
+
 # -------------------------------
 # ✅ Load Vosk speech model safely
 # -------------------------------
@@ -38,12 +39,13 @@ def speech_to_text():
     if 'audio' not in request.files:
         return jsonify({"error": "No audio file provided"}), 400
 
+    import tempfile
     audio_file = request.files['audio']
     filename = secure_filename(audio_file.filename)
-    filepath = os.path.join("/tmp", filename)
-    audio_file.save(filepath)
+    temp_path = os.path.join(tempfile.gettempdir(), filename)
+    audio_file.save(temp_path)
 
-    wf = wave.open(filepath, "rb")
+    wf = wave.open(temp_path, "rb")
     if wf.getnchannels() != 1 or wf.getsampwidth() != 2 or wf.getcomptype() != "NONE":
         return jsonify({"error": "Audio must be mono WAV format (PCM)"}), 400
 
@@ -62,8 +64,8 @@ def speech_to_text():
     results.append(final_result.get("text", ""))
 
     transcript = " ".join(results).strip().lower()
-
     return jsonify({"transcript": transcript})
+
 
 
 # --------------------------------

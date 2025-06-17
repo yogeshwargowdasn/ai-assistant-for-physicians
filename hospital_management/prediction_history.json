@@ -158,5 +158,167 @@
         "tests": [
             "Consult General Physician"
         ]
+    },
+    {
+        "symptoms": [
+            "sweating"
+        ],
+        "disease": "Pneumothorax",
+        "tests": [
+            "Consult General Physician"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever",
+            "sweating"
+        ],
+        "disease": "Food Poisoning",
+        "tests": [
+            "Stool Culture",
+            "Electrolyte Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Food Poisoning",
+        "tests": [
+            "Stool Culture",
+            "Electrolyte Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Food Poisoning",
+        "tests": [
+            "Stool Culture",
+            "Electrolyte Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Food Poisoning",
+        "tests": [
+            "Stool Culture",
+            "Electrolyte Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Food Poisoning",
+        "tests": [
+            "Stool Culture",
+            "Electrolyte Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Food Poisoning",
+        "tests": [
+            "Stool Culture",
+            "Electrolyte Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "fever",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Food Poisoning",
+        "tests": [
+            "Stool Culture",
+            "Electrolyte Test"
+        ]
+    },
+    {
+        "symptoms": [
+            "body pain",
+            "fever",
+            "shortness of breath"
+        ],
+        "disease": "Dengue",
+        "tests": [
+            "Dengue NS1 Antigen",
+            "Platelet Count",
+            "CBC"
+        ]
+    },
+    {
+        "symptoms": [
+            "body pain",
+            "chest pain",
+            "fever",
+            "shortness of breath"
+        ],
+        "disease": "Dengue",
+        "tests": [
+            "Dengue NS1 Antigen",
+            "Platelet Count",
+            "CBC"
+        ]
+    },
+    {
+        "symptoms": [
+            "body pain",
+            "chest pain",
+            "fever",
+            "shortness of breath"
+        ],
+        "disease": "Dengue",
+        "tests": [
+            "Dengue NS1 Antigen",
+            "Platelet Count",
+            "CBC"
+        ]
+    },
+    {
+        "symptoms": [
+            "body pain",
+            "chest pain",
+            "fever",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Dengue",
+        "tests": [
+            "Dengue NS1 Antigen",
+            "Platelet Count",
+            "CBC"
+        ]
+    },
+    {
+        "symptoms": [
+            "body pain",
+            "chest pain",
+            "shortness of breath",
+            "sweating"
+        ],
+        "disease": "Heart Attack",
+        "tests": [
+            "ECG",
+            "Troponin Test",
+            "Chest X-ray"
+        ]
     }
 ]

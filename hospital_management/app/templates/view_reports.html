@@ -1,9 +1,13 @@
 {% extends "base.html" %}
-
 {% block content %}
 <h2>Your Medical Reports</h2>
+
 <a href="{{ url_for('auth.dashboard') }}" class="btn btn-secondary mb-3">Back to Dashboard</a>
 
+<form method="get" class="input-group mb-3" action="{{ url_for('report.view_reports') }}">
+  <input type="text" name="search" class="form-control" placeholder="Search by filename..." value="{{ search_query }}">
+  <button class="btn btn-outline-primary" type="submit">Search</button>
+</form>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
@@ -17,33 +21,133 @@
 {% endwith %}
 
 {% if reports %}
-  <table class="table table-bordered bg-white shadow-sm">
-    <thead class="table-light">
-      <tr>
-        <th>#</th>
-        <th>Filename</th>
-        <th>Uploaded On</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for report in reports %}
-      <tr>
-        <td>{{ loop.index }}</td>
-        <td>{{ report.filename }}</td>
-        <td>{{ report.upload_date.strftime('%Y-%m-%d') if report.upload_date else 'N/A' }}</td>
-        <td>
-          <a href="{{ url_for('report.download_report', filename=report.filename) }}" class="btn btn-sm btn-success">Download</a>
-          <a href="{{ url_for('report.delete_report', report_id=report.id) }}" class="btn btn-sm btn-danger"
-             onclick="return confirm('Are you sure you want to delete this report?');">Delete</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% else %}
-  <p>No reports uploaded yet.</p>
+<table class="table table-bordered bg-white shadow-sm">
+  <thead class="table-light">
+    <tr>
+      <th>#</th>
+      <th>File</th>
+      <th>Uploaded</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for report in reports %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>
+        {% set ext = report.filename.rsplit('.', 1)[1].lower() %}
+        {% if ext == 'pdf' %}
+          <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+        {% elif ext in ['png', 'jpg', 'jpeg'] %}
+          <i class="bi bi-file-earmark-image text-primary"></i>
+        {% elif ext == 'docx' %}
+          <i class="bi bi-file-earmark-word-fill text-info"></i>
+        {% else %}
+          <i class="bi bi-file-earmark-fill text-secondary"></i>
+        {% endif %}
+        {{ report.filename }}
+      </td>
+      <td>{{ report.upload_date.strftime('%Y-%m-%d') if report.upload_date else 'N/A' }}</td>
+      <td>
+        <a href="{{ url_for('report.view_report', filename=report.filename) }}"
+           class="btn btn-sm btn-info"
+           data-bs-toggle="modal"
+           data-bs-target="#previewModal"
+           data-filename="{{ report.filename }}"
+           data-filetype="{{ ext }}">
+           View
+        </a>
+
+        <a href="{{ url_for('report.download_report', filename=report.filename) }}" class="btn btn-sm btn-success">Download</a>
+
+        <a href="{{ url_for('report.delete_report', report_id=report.id) }}" class="btn btn-sm btn-danger"
+           onclick="return confirm('Are you sure you want to delete this report?');">Delete</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if pagination %}
+<nav>
+  <ul class="pagination justify-content-center mt-4">
+    {% if pagination.has_prev %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('report.view_reports', page=pagination.prev_num, search=search_query) }}">Previous</a>
+      </li>
+    {% endif %}
+    {% for page_num in pagination.iter_pages() %}
+      {% if page_num %}
+        <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('report.view_reports', page=page_num, search=search_query) }}">{{ page_num }}</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('report.view_reports', page=pagination.next_num, search=search_query) }}">Next</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
 {% endif %}
 
-<a href="{{ url_for('report.upload_report') }}" class="btn btn-primary">Upload New Report</a>
+{% else %}
+<p>No reports uploaded yet.</p>
+{% endif %}
+
+<a href="{{ url_for('report.upload_report') }}" class="btn btn-primary mt-3">Upload New Report</a>
+
+<!-- Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Report Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div id="previewContent">
+          <p class="text-muted">Loading preview...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const previewModal = document.getElementById('previewModal');
+  previewModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    const filename = button.getAttribute('data-filename');
+    const filetype = button.getAttribute('data-filetype');
+    const previewContent = document.getElementById('previewContent');
+
+    previewContent.innerHTML = '<p class="text-muted">Loading preview...</p>';
+    const fileUrl = "{{ url_for('report.view_report', filename='FILENAME') }}".replace('FILENAME', filename);
+
+    if (filetype === 'pdf') {
+      previewContent.innerHTML = `
+        <embed src="${fileUrl}" type="application/pdf" width="100%" height="600px" />
+      `;
+    } else if (['png', 'jpg', 'jpeg'].includes(filetype)) {
+      previewContent.innerHTML = `
+        <img src="${fileUrl}" class="img-fluid" alt="Image Report" />
+      `;
+    } else if (filetype === 'docx') {
+      fetch(fileUrl)
+        .then(response => response.text())
+        .then(html => previewContent.innerHTML = html)
+        .catch(() => previewContent.innerHTML = '<p class="text-danger">Could not load DOCX preview.</p>');
+    } else {
+      previewContent.innerHTML = `
+        <p class="text-muted">Preview not supported for .${filetype}</p>
+        <a href="${fileUrl}" class="btn btn-primary" target="_blank">Download & View</a>
+      `;
+    }
+  });
+</script>
+
 {% endblock %}

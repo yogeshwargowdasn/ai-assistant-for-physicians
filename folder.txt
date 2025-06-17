@@ -1,0 +1,14 @@
+hospital-management-system/
+├── app/
+│   ├── templates/              # HTML templates
+│   ├── static/                 # CSS, JS
+│   ├── controllers/            # Flask routes (views) # GPT-3.5 OpenRouter integration
+│   ├── models/                 # SQLAlchemy DB models
+│   ├── __init__.py             # Flask app initialization
+│   └── ...
+│                 
+├──train_model.py               # traing the ML model
+├── requirements.txt
+├── README.md
+├── run.py                     # App entry point
+└── .gitignore

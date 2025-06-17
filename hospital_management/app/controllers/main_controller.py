@@ -4,6 +4,9 @@ from flask_login import current_user, login_required
 from app import db
 from app.models.prediction_result import PredictionResult
 
+
+
+
 main_bp = Blueprint('main', __name__)
 
 # ------------------------------
@@ -23,9 +26,13 @@ def symptom_suggest_page():
 # ------------------------------
 # 🔹 Route: Speech-to-Text Page
 # ------------------------------
+
+
 @main_bp.route('/speech-to-text')
 def speech_to_text_page():
     return render_template('speech_to_text.html')
+
+
 
 # ------------------------------
 # 🔹 Save Symptoms (Optional Manual Entry)

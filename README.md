@@ -1,6 +1,6 @@
-#  AI-Enabled Hospital Management System
+#  Smart Hospital Management System
 
-A full-stack, intelligent hospital management system built using Python (Flask), SQLAlchemy, and integrated with GenAI for patient symptom prediction and interaction. Designed with MVC architecture, the platform handles role-based dashboards for Doctors, Patients, and Admins while incorporating AI-driven disease prediction and natural language chatbot interaction.
+A full-stack, intelligent hospital management web application built using Python (Flask), SQLAlchemy, and integrated with GenAI(AI and ML based symptoms and disease prediction using GPT-3.5 via Open Router and Random Forest) for patient symptom prediction and interaction. Designed with MVC architecture, the platform handles role-based dashboards for Doctors, Patients, and Admins while incorporating AI-driven disease prediction and natural language chatbot interaction.
 
 ---
 

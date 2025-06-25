@@ -1,16 +1,16 @@
-import os
+import os 
 import json
 import requests
 import wave
 import joblib
 import numpy as np
+import re
 
 from flask import Blueprint, request, jsonify, Response
 from werkzeug.utils import secure_filename
 from vosk import Model, KaldiRecognizer
 
 ai_bp = Blueprint('ai', __name__)
-
 
 # -------------------------------
 # ✅ Load Vosk speech model safely
@@ -29,7 +29,7 @@ else:
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # --------------------------------
-# 1️⃣ Speech-to-Text Endpoint (Vosk)
+# 1️⃣ Speech-to-Text Endpoint (Vosk) + Symptom Detection
 # --------------------------------
 @ai_bp.route('/ai/speech-to-text', methods=['POST'])
 def speech_to_text():
@@ -64,8 +64,52 @@ def speech_to_text():
     results.append(final_result.get("text", ""))
 
     transcript = " ".join(results).strip().lower()
-    return jsonify({"transcript": transcript})
 
+    # ✅ Load known symptoms and extract full or multi-word matches
+    known_symptoms = load_or_create_symptom_json(os.path.join(base_dir, "..", "..", "known_symptoms.json"))
+
+    detected_symptoms = []
+    for symptom in known_symptoms:
+        if symptom in transcript:
+            detected_symptoms.append(symptom)
+
+    return jsonify({
+        "transcript": transcript,
+        "detected_symptoms": detected_symptoms
+    })
+
+# --------------------------------
+# 🩺 Create/load known_symptoms.json
+# --------------------------------
+def load_or_create_symptom_json(file_path):
+    default_symptoms = [
+        "fever", "cough", "headache", "nausea", "vomiting", "fatigue", "chest pain",
+        "rash", "sore throat", "body pain", "diarrhea", "shortness of breath",
+        "dizziness", "cold", "sneezing", "throat pain", "chest pain", "pain", "migraine", "weakness",
+        "itching", "swelling", "runny nose", "loss of appetite", "weight loss",
+        "night sweats", "abdominal pain", "joint pain", "blurred vision", "irritation",
+        "muscle ache", "burning sensation", "tingling", "loss of taste", "loss of smell",
+        "palpitations", "frequent urination", "dry mouth", "difficulty breathing","tired",
+        "yellowing of skin", "dehydration", "congestion", "chills", "bleeding", "insomnia"
+    ]
+
+    if not os.path.exists(file_path):
+        with open(file_path, "w") as f:
+            json.dump(default_symptoms, f, indent=4)
+        print(f"[INFO] Created new known_symptoms.json with {len(default_symptoms)} symptoms.")
+
+    with open(file_path, "r") as f:
+        symptoms = json.load(f)
+
+    return set(symptoms)
+
+
+# --------------------------------
+# 🔍 Utility: Validate Medical Input
+# --------------------------------
+def is_medical_like_input(text):
+    cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
+    return len(cleaned.strip()) >= 3  # Must contain 3+ valid characters
 
 
 # --------------------------------
@@ -74,6 +118,9 @@ def speech_to_text():
 def suggest_symptoms_from_llm(input_text):
     if not OPENROUTER_API_KEY:
         return ["Missing OpenRouter API key"]
+
+    if not is_medical_like_input(input_text):
+        return ["Please enter valid medical symptoms."]
 
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -88,12 +135,9 @@ def suggest_symptoms_from_llm(input_text):
         "List 5 unique possible medical symptoms they might be referring to, one per line."
     )
 
-    
     payload = {
         "model": "openai/gpt-3.5-turbo",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
+        "messages": [{"role": "user", "content": prompt}]
     }
 
     try:
@@ -102,13 +146,10 @@ def suggest_symptoms_from_llm(input_text):
             return [f"OpenRouter Error: {response.status_code}"]
 
         content = response.json()["choices"][0]["message"]["content"]
-        
-        import re
-        # Strip numbers, bullets, quotes, and extra punctuation from beginning
         suggestions = [
-            re.sub(r"^\W*\d*\W*", "", line.strip().lower()) for line in content.split("\n") if line.strip()
+            re.sub(r"^\W*\d*\W*", "", line.strip().lower())
+            for line in content.split("\n") if line.strip()
         ]
-        return suggestions if suggestions else ["No symptoms identified"]
         return suggestions if suggestions else ["No symptoms identified"]
 
     except Exception as e:
@@ -123,8 +164,12 @@ def symptom_suggest():
     data = request.get_json()
     input_text = data.get("input_text", "")
 
-    if not input_text:
-        return jsonify({"error": "input_text is required"}), 400
+    if not input_text or not is_medical_like_input(input_text):
+        return jsonify({
+            "input_text": input_text,
+            "related_symptoms": [],
+            "error": "Please enter valid medical symptom keywords."
+        }), 400
 
     related = suggest_symptoms_from_llm(input_text)
     return jsonify({
@@ -149,7 +194,6 @@ def predict_disease():
     print("[🩺] Received symptoms from frontend:", symptoms)
 
     if not ml_model or not symptom_encoder:
-        print("[❌] ML model or encoder not loaded")
         return jsonify({"error": "ML model or encoder not loaded"}), 500
 
     if not symptoms or not isinstance(symptoms, list):

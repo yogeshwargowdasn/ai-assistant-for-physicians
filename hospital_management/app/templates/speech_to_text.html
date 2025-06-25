@@ -10,9 +10,14 @@
   <div id="loader" class="mt-2 text-warning" style="display: none;">⏳ Listening & processing...</div>
 
   <div class="mt-4">
-    <label for="transcriptBox"><strong>📝 Detected Text:</strong></label>
-    <textarea id="transcriptBox" class="form-control" rows="4" readonly></textarea>
-    <button class="btn btn-success mt-2" onclick="copyText()">📋 Copy to Clipboard</button>
+    <label for="transcriptBox"><strong>📝 Full Transcript:</strong></label>
+    <textarea id="transcriptBox" class="form-control" rows="3" readonly></textarea>
+  </div>
+
+  <div class="mt-3">
+    <label for="symptomBox"><strong>🩺 Detected Symptoms:</strong></label>
+    <textarea id="symptomBox" class="form-control" rows="2" readonly></textarea>
+    <button class="btn btn-success mt-2" onclick="copySymptoms()">📋 Copy Symptoms</button>
   </div>
 </div>
 
@@ -23,6 +28,8 @@
   async function startRecording() {
     audioChunks = [];
     document.getElementById("loader").style.display = "block";
+    document.getElementById("transcriptBox").value = "";
+    document.getElementById("symptomBox").value = "";
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream);
@@ -51,10 +58,15 @@
 
       const result = await response.json();
       document.getElementById("loader").style.display = "none";
+
       if (result.transcript) {
         document.getElementById('transcriptBox').value = result.transcript;
+      }
+
+      if (result.detected_symptoms && result.detected_symptoms.length > 0) {
+        document.getElementById('symptomBox').value = result.detected_symptoms.join(", ");
       } else {
-        document.getElementById('transcriptBox').value = "[Error] " + result.error;
+        document.getElementById('symptomBox').value = "❌ No symptoms detected.";
       }
     };
 
@@ -102,11 +114,11 @@
     return new Blob([view], { type: 'audio/wav' });
   }
 
-  function copyText() {
-    const textBox = document.getElementById("transcriptBox");
-    textBox.select();
+  function copySymptoms() {
+    const symptomBox = document.getElementById("symptomBox");
+    symptomBox.select();
     document.execCommand("copy");
-    alert("Copied to clipboard!");
+    alert("Symptoms copied to clipboard!");
   }
 </script>
 {% endblock %}

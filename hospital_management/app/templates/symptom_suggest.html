@@ -30,9 +30,42 @@
 </div>
 
 <script>
+const medicalKeywords = [
+  "fever", "cough", "cold", "pain", "headache", "nausea", "vomiting", "diarrhea", "fatigue", "rash",
+  "throat", "dizziness", "chills", "breath", "chest", "sore", "flu", "infection", "migraine", "burning",
+  "bleeding", "swelling", "itch", "congestion", "body", "ache", "nose", "eye", "ear", "stomach", "skin"
+];
+
+function isValidSymptomInput(input) {
+  const cleaned = input.trim().toLowerCase();
+
+  if (!cleaned || cleaned.length < 3) return false;
+
+  // Reject if only symbols or digits
+  if (/^[^a-zA-Z]+$/.test(cleaned)) return false;
+
+  // Reject if it's a single word and not matching medical keyword
+  const words = cleaned.split(/\s+/);
+
+  // If only one word, check if it's a medical keyword
+  if (words.length === 1) {
+    return medicalKeywords.includes(words[0]);
+  }
+
+  // For multi-word phrases, check if any word is a medical keyword
+  const matches = words.filter(word => medicalKeywords.includes(word));
+  return matches.length > 0;
+}
+
 async function fetchSuggestions() {
   const input = document.getElementById('symptomInput').value;
-  if (!input) return;
+  const suggestionsDiv = document.getElementById('suggestions');
+  suggestionsDiv.innerHTML = '';
+
+  if (!isValidSymptomInput(input)) {
+    suggestionsDiv.innerHTML = "<p class='text-danger'>❌ Please enter a valid symptom (e.g., 'fever', 'sore throat'). Avoid disease name or random or unrelated text,just give proper symptoms.</p>";
+    return;
+  }
 
   const res = await fetch('/ai/symptom-suggest', {
     method: 'POST',
@@ -41,10 +74,8 @@ async function fetchSuggestions() {
   });
 
   const data = await res.json();
-  const container = document.getElementById('suggestions');
-  container.innerHTML = '';
 
-  if (data.related_symptoms) {
+  if (data.related_symptoms && data.related_symptoms.length > 0) {
     data.related_symptoms.forEach(symptom => {
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
@@ -60,10 +91,10 @@ async function fetchSuggestions() {
       div.appendChild(checkbox);
       div.appendChild(label);
 
-      container.appendChild(div);
+      suggestionsDiv.appendChild(div);
     });
   } else {
-    container.innerHTML = "<p class='text-danger'>No suggestions found.</p>";
+    suggestionsDiv.innerHTML = "<p class='text-danger'>No suggestions found for the given input.</p>";
   }
 }
 
@@ -82,7 +113,9 @@ function saveSelected() {
     list.appendChild(li);
   });
 
-  hiddenInput.value = selected.join(','); // send to backend
+  hiddenInput.value = selected.join(',');
 }
 </script>
+
+
 {% endblock %}
